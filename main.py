@@ -31,17 +31,27 @@ weight_mat = csr_matrix((weight, (rows, cols)), shape=(num_faces, num_faces))
 ang_dist_mat = csr_matrix((ang_dists, (rows, cols)), shape=(num_faces, num_faces))
 
 weight_mat = weight_mat + weight_mat.getH()
+ang_dist_mat = ang_dist_mat + ang_dist_mat.getH()
+
 
 graph = Graph(num_faces, weight_mat)
 dist = graph.get_dist_graph()
 
+# Manually
 seed_set = selectSeeds(4, num_faces, dist)
 seed_list = list(seed_set)
+print(seed_list)
 
-res = k_way(num_faces, seed_list, dist)
+res, fuzzy_dict = k_way(num_faces, seed_list, dist)
 
-color_dic = {seed_list[0]: (240,100,160,150), seed_list[1]:(50,150,150,150),seed_list[2]:(250,250,100,150),seed_list[3]:(150,100,250,150)}
+res = elim_fuzzy(res, seed_list, ang_dist_mat, fuzzy_dict)
+
+# pink red, green, yellow, purple
+color_dic = {0: (240,100,160,200), 1:(50,150,150,200), 2:(250,250,100,200), 3:(150,100,250,200)}
 
 for face in range(num_faces):
-    mesh.visual.face_colors[face] = color_dic[seed_list[res[face]]]
+    if res[face] >= 0:
+        mesh.visual.face_colors[face] = color_dic[res[face]]
+    else:
+        mesh.visual.face_colors[face] = (0, 0, 0, 200)
 mesh.show()

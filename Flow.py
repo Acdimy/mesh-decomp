@@ -56,24 +56,28 @@ class FlowGraph():
             flow += a[tgt]
         return flow
     def BFS(self, src):
-        searched_v = []
+        searched_v = set()
         Q = queue.Queue()
         Q.put(src)
-        searched_v.append(src)
+        searched_v.add(src)
         while Q.empty() == False:
             x = Q.get()
             for idx in self.graph[x]:
                 e = self.edges[idx]
-                if idx % 2 == 0 and e.cap > e.flow:
-                    searched_v.append(e.to)
+                if idx % 2 == 0 and e.cap > e.flow and e.to not in searched_v:
+                    searched_v.add(e.to)
                     Q.put(e.to)
-        return searched_v
+        not_searched = []
+        for v in self.graph:
+            if v not in searched_v:
+                not_searched.append(v)
+        return list(searched_v), not_searched
     def updateCap(self, ang_mat):
         # Not including src and tgt
-        ang_list = [ang_mat[e.fr][e.to] for e in self.edges]
+        ang_list = [ang_mat[e.fr, e.to] for e in self.edges]
         ang_list = np.array(ang_list)
         ang_mean = ang_list.mean()
         for i in range(len(self.edges)):
             if i % 2 == 0:
-                self.edges[i].cap = 1 / (1 + ang_mat[self.edges[i].fr][self.edges[i].to] / ang_mean)
+                self.edges[i].cap = 1 / (1 + ang_mat[self.edges[i].fr, self.edges[i].to] / ang_mean)
 

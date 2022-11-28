@@ -8,7 +8,7 @@ import queue
 
 ang_eta = 0.3
 weight_delta = 0.5
-fuzzy_eps = 0.05
+fuzzy_eps = 0.01
 
 class Graph():
     def __init__(self, vertices, g):
@@ -189,11 +189,10 @@ def k_way(num_faces, seed_list, dist):
             res.append(-1)
     return res, fuzzy_dict
 
-def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res, num_faces):
-    # adj_graph: csr_matrix, rows and colomns are face ids
+def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res):
+    # ang_dist_mat: csr_matrix, rows and colomns are face ids
     # src_s1, tgt_s2: INT, id of seeds (depart different regions)
     # fuzzy_dict: dict, {(region_A, region_B):[fuzzy_face_ids]}
-    # ang_dict: list, ang_dist of adjacency pairs
     # decomp_res: list, classification of faces
     fuzzy_graph = FlowGraph()
     a1_set = set()
@@ -215,9 +214,26 @@ def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res, num_face
                 fuzzy_graph.addEdge(fuzzy_face, c, 0)
 
     fuzzy_graph.updateCap(ang_dist_mat)
+    
+    for a1_face in a1_set:
+        fuzzy_graph.addEdge(-1, a1_face, float("inf"))
+    for a2_face in a2_set:
+        fuzzy_graph.addEdge(a2_face, -2, float("inf"))
     return fuzzy_graph
 
-
+def elim_fuzzy(decomp_res, seed_list, ang_dist_mat, fuzzy_dict):
+    for i in range(len(seed_list)):
+        for j in range(i, len(seed_list)):
+            fuzzy_graph = getFuzzyGraph(ang_dist_mat, i, j, fuzzy_dict, decomp_res)
+            fuzzy_graph.maxFlow(-1, -2)
+            s1_set, s2_set = fuzzy_graph.BFS(-1)
+            for idx in s1_set:
+                if idx > 0:
+                    decomp_res[idx] = i
+            for idx in s2_set:
+                if idx > 0:
+                    decomp_res[idx] = j
+    return decomp_res
 
 def allo_color(seed_list):
     dic = {seed_list[0]: (50,50,50), seed_list[1]:(50,150,150),seed_list[2]:(50,250,250)}
