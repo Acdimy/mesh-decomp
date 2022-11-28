@@ -10,11 +10,10 @@ class FlowEdge():
         self.flow = flow
 
 class FlowGraph():
+    # Calculate the max-flow graph
     def __init__(self):
-        # self.V = 0
         self.edges = []
         self.graph = defaultdict(list)
-        # self.a = defaultdict(int)
         self.p = {}
     def addEdge(self, fr, to, cap):
         self.edges.append(FlowEdge(fr, to, cap, 0))
@@ -23,9 +22,7 @@ class FlowGraph():
         self.graph[fr].append(m - 2)
         self.graph[to].append(m - 1)
     def maxFlow(self, src, tgt):
-        # print(self.graph)
         flow = 0
-        # v = len(self.graph)
         while True:
             a = defaultdict(int)
             Q = queue.Queue()
@@ -39,8 +36,6 @@ class FlowGraph():
                         self.p[e.to] = idx
                         a[e.to] = min(a[x], e.cap - e.flow)
                         Q.put(e.to)
-                        # print(e.to, a[e.to])
-                # print(a[1], a[2], a[3], a[4])
                 if a[tgt] != 0:
                     break
             if a[tgt] == 0:
@@ -52,7 +47,6 @@ class FlowGraph():
                 self.edges[self.p[u]].flow += a[tgt]
                 self.edges[self.p[u] ^ 1].flow -= a[tgt]
                 u = self.edges[self.p[u]].fr
-            # print(a[tgt])
             flow += a[tgt]
         return flow
     def BFS(self, src):

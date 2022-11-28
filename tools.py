@@ -11,6 +11,7 @@ weight_delta = 0.5
 fuzzy_eps = 0.01
 
 class Graph():
+    # Calculate the minimum distance graph
     def __init__(self, vertices, g):
         self.V = vertices
         self.graph = self.init_graph(g)
@@ -150,6 +151,7 @@ def k_way(num_faces, seed_list, dist):
             elif prob > submax_idx:
                 submax_prob = prob
                 submax_idx = j
+        # Compare the max two probabilities
         if max_prob - submax_prob >= fuzzy_eps:
             res.append(max_idx)
         else:
@@ -160,13 +162,14 @@ def k_way(num_faces, seed_list, dist):
 
 def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res):
     # ang_dist_mat: csr_matrix, rows and colomns are face ids
-    # src_s1, tgt_s2: INT, id of seeds (depart different regions)
+    # src_s1, tgt_s2: INT, id of seeds (separate different regions)
     # fuzzy_dict: dict, {(region_A, region_B):[fuzzy_face_ids]}
     # decomp_res: list, classification of faces, from function 'k_way'
     fuzzy_graph = FlowGraph()
     a1_set = set()
     a2_set = set()
     fuzzy_set = set(fuzzy_dict[(src_s1, tgt_s2)])
+    # Establish the topology of the graph
     for face in fuzzy_set:
         for i in range(ang_dist_mat.indptr[face], ang_dist_mat.indptr[face+1]):
             c = ang_dist_mat.indices[i]
@@ -182,8 +185,10 @@ def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res):
             if c in fuzzy_set:
                 fuzzy_graph.addEdge(fuzzy_face, c, 0)
 
+    # Update capacity of edges (over the fuzzy faces), maybe bugs here
     fuzzy_graph.updateCap(ang_dist_mat)
     
+    # Add source edges and target edges
     for a1_face in a1_set:
         fuzzy_graph.addEdge(-1, a1_face, float("inf"))
     for a2_face in a2_set:
