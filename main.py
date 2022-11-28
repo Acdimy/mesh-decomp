@@ -37,7 +37,7 @@ ang_dist_mat = ang_dist_mat + ang_dist_mat.getH()
 graph = Graph(num_faces, weight_mat)
 dist = graph.get_dist_graph()
 
-# Manually
+# Manually, TODO here
 seed_set = selectSeeds(4, num_faces, dist)
 seed_list = list(seed_set)
 print('Seed list: ', seed_list)
