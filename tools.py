@@ -23,15 +23,6 @@ class Graph():
                 graph[i].append((g.indices[j], g.data[j]))
         return graph
 
-    # def min_distance(self, dist, spt_set):
-    #     min_val = 1e7
-    #     min_index = -1
-    #     for v in range(self.V):
-    #         if dist[v] < min_val and spt_set[v] == False:
-    #             min_val = dist[v]
-    #             min_index = v
-    #     return min_index
-
     def dijkstra(self, s):
         dis = defaultdict(lambda:float("inf"))
         dis[s] = 0
@@ -46,26 +37,6 @@ class Graph():
                     dis[v] = dis[u] + w
                     heapq.heappush(q,(dis[v],v))
         return dis
-        # if src == tgt:
-        #     return 0
-        # elif self.graph[src, tgt] != 0:
-        #     return self.graph[src, tgt]
-        # dist = [1e7] * self.V
-        # dist[src] = 0
-        # spt_set = [False] * self.V
-        # for _ in range(self.V):
-        #     u = self.min_distance(dist, spt_set)
-        #     print(u)
-        #     if u == -1:
-        #         print("???")
-        #         break
-        #     spt_set[u] = True
-        #     if u == tgt:
-        #         break
-        #     for v in range(self.V):
-        #         if (self.graph[u, v] > 0 and spt_set[v] == False and dist[v] > dist[u] + self.graph[u, v]):
-        #             dist[v] = dist[u] + self.graph[u, v]
-        # return dist[tgt]
     def get_dist_graph(self):
         dist_list = []
         for i in range(self.V):
@@ -88,13 +59,11 @@ def floyd(num, graph):
 def getGeod(idx, verts, norms, convs, face_adj, adj_edges, unsh_edges):
     verts_shared = verts[adj_edges[idx]] # 2, face 0, face 1
     verts_unshared = verts[unsh_edges[idx]] # 2, face 0, face 1
-    # origin = np.array(verts_shared[1])
     shared_loc = np.array(verts_shared) - np.array(verts_shared[1])
     unshared_loc = np.array(verts_unshared) - np.array(verts_shared[1]) # (a1, b1, c1), (a2, b2, c2)
     axis = np.array(verts_shared[0]) - np.array(verts_shared[1]) # (a, b, c)
     axis   = axis / np.linalg.norm(axis)
     edge_0 = unshared_loc[0] - shared_loc[1] # shared_loc[1]: origin
-    # edge_1 = unshared_loc[1] - shared_loc[1]
     convex = convs[idx]
     norm_0, norm_1 = norms[face_adj[idx]]
     center_0 = sum([shared_loc[0], shared_loc[1], unshared_loc[0]]) / 3
@@ -193,7 +162,7 @@ def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res):
     # ang_dist_mat: csr_matrix, rows and colomns are face ids
     # src_s1, tgt_s2: INT, id of seeds (depart different regions)
     # fuzzy_dict: dict, {(region_A, region_B):[fuzzy_face_ids]}
-    # decomp_res: list, classification of faces
+    # decomp_res: list, classification of faces, from function 'k_way'
     fuzzy_graph = FlowGraph()
     a1_set = set()
     a2_set = set()
@@ -224,9 +193,12 @@ def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res):
 def elim_fuzzy(decomp_res, seed_list, ang_dist_mat, fuzzy_dict):
     for i in range(len(seed_list)):
         for j in range(i, len(seed_list)):
+            if len(fuzzy_dict[(i, j)]) == 0:
+                continue
             fuzzy_graph = getFuzzyGraph(ang_dist_mat, i, j, fuzzy_dict, decomp_res)
             fuzzy_graph.maxFlow(-1, -2)
             s1_set, s2_set = fuzzy_graph.BFS(-1)
+            print('Allocate to s1: ', s1_set, ' allocate to s2: ',  s2_set)
             for idx in s1_set:
                 if idx > 0:
                     decomp_res[idx] = i

@@ -40,7 +40,7 @@ dist = graph.get_dist_graph()
 # Manually
 seed_set = selectSeeds(4, num_faces, dist)
 seed_list = list(seed_set)
-print(seed_list)
+print('Seed list: ', seed_list)
 
 res, fuzzy_dict = k_way(num_faces, seed_list, dist)
 
