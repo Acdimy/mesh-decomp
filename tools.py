@@ -202,28 +202,20 @@ def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res, num_face
     for face in fuzzy_set:
         for i in range(ang_dist_mat.indptr[face], ang_dist_mat.indptr[face+1]):
             c = ang_dist_mat.indices[i]
-            # val = ang_dist_mat.data[i]
             if decomp_res[c] == src_s1:
                 a1_set.add(c)
                 fuzzy_graph.addEdge(c, face, 0)
             elif decomp_res[c] == tgt_s2:
                 a2_set.add(c)
                 fuzzy_graph.addEdge(face, c, 0)
+    for fuzzy_face in fuzzy_set:
+        for i in range(ang_dist_mat.indptr[fuzzy_face], ang_dist_mat.indptr[fuzzy_face+1]):
+            c = ang_dist_mat.indices[i]
+            if c in fuzzy_set:
+                fuzzy_graph.addEdge(fuzzy_face, c, 0)
 
-    # Q = queue.Queue()
-    # visited = set()
-    # for face_a1 in a1_set:
-    #     Q.put(face_a1)
-    # while Q.empty() == False:
-    #     cur_face = Q.get()
-    #     for i in range(ang_dist_mat.indptr[cur_face], ang_dist_mat.indptr[cur_face+1]):
-    #         c = ang_dist_mat.indices[i]
-    #         if c in fuzzy_set:
-    #             fuzzy_graph.addEdge(cur_face, c, 0)
-    #             if c not in visited:
-    #                 Q.put(c)
-    #                 visited.add(cur_face)
-    return
+    fuzzy_graph.updateCap(ang_dist_mat)
+    return fuzzy_graph
 
 
 
