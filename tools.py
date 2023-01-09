@@ -120,6 +120,16 @@ def selectFirstSeed(num_faces, dist):
             key_sum = d
     return key_idx
 
+def HselectFirstSeed(faces_id, dist):
+    key_idx = -1
+    key_sum = float("inf")
+    for i in faces_id:
+        d = sum(dist[i].values())
+        if d < key_sum:
+            key_idx = i
+            key_sum = d
+    return key_idx
+
 def minDistofSeeds(cand_idx, seed_list, dist):
     return min([dist[cand_idx][seed] for seed in seed_list])
 
@@ -136,6 +146,59 @@ def selectSeeds(num_seeds, num_faces, dist):
                 maxmin_idx = i
         seed_set.add(maxmin_idx)
     return seed_set
+
+def HselectSeeds(num_seeds, faces_id, dist):
+    first_seed = HselectFirstSeed(faces_id, dist)
+    seed_set = set([first_seed])
+    for _ in range(num_seeds-1):
+        maxmin_dist = 0
+        maxmin_idx = -1
+        for i in faces_id:
+            min_dist = minDistofSeeds(i, seed_set, dist)
+            if min_dist > maxmin_dist:
+                maxmin_dist = min_dist
+                maxmin_idx = i
+        seed_set.add(maxmin_idx)
+    return seed_set, maxmin_dist
+
+def selectK(num_faces, dist, thr=0.8):
+    first_seed = selectFirstSeed(num_faces, dist)
+    seed_set = set([first_seed])
+    keep_maxmin_dist = 0
+    for k in range(1,4):
+        maxmin_dist = 0
+        maxmin_idx = -1
+        for i in range(num_faces):
+            min_dist = minDistofSeeds(i, seed_set, dist)
+            if min_dist > maxmin_dist:
+                maxmin_dist = min_dist
+                maxmin_idx = i
+        print(keep_maxmin_dist, maxmin_dist)
+        if maxmin_dist >= thr * keep_maxmin_dist:
+            keep_maxmin_dist = maxmin_dist
+        else:
+            return k
+        seed_set.add(maxmin_idx)
+    return 4
+
+def HselectK(faces_id, dist, thr=0.85):
+    first_seed = HselectFirstSeed(faces_id, dist)
+    seed_set = set([first_seed])
+    keep_maxmin_dist = 0
+    for k in range(1,4):
+        maxmin_dist = 0
+        maxmin_idx = -1
+        for i in faces_id:
+            min_dist = minDistofSeeds(i, seed_set, dist)
+            if min_dist > maxmin_dist:
+                maxmin_dist = min_dist
+                maxmin_idx = i
+        if maxmin_dist >= thr * keep_maxmin_dist:
+            keep_maxmin_dist = maxmin_dist
+        else:
+            return k
+        seed_set.add(maxmin_idx)
+    return 4
 
 def k_way(num_faces, seed_list, dist):
     res = []
@@ -159,6 +222,19 @@ def k_way(num_faces, seed_list, dist):
             fuzzy_dict[(submax_idx, max_idx)].append(i)
             res.append(-1)
     return res, fuzzy_dict
+
+def H_k_way(faces_id, seed_list, dist):
+    res = defaultdict(list)
+    for i in faces_id:
+        max_prob = 0
+        max_idx = -1
+        for j, seed in enumerate(seed_list):
+            prob = getProb(i, seed, seed_list, dist)
+            if prob > max_prob:
+                max_prob = prob
+                max_idx = j
+        res[max_idx].append(i)
+    return res
 
 def getFuzzyGraph(ang_dist_mat, src_s1, tgt_s2, fuzzy_dict, decomp_res):
     # ang_dist_mat: csr_matrix, rows and colomns are face ids
@@ -212,8 +288,31 @@ def elim_fuzzy(decomp_res, seed_list, ang_dist_mat, fuzzy_dict):
                     decomp_res[idx] = j
     return decomp_res
 
-def allo_color(seed_list):
-    dic = {seed_list[0]: (50,50,50), seed_list[1]:(50,150,150),seed_list[2]:(50,250,250)}
-    return dic
+def gen_rand_color(i):
+    import random
+    random.seed(i)
+    a = random.randint(10, 250)
+    b = random.randint(10, 250)
+    c = random.randint(10, 250)
+    return (a,b,c,200)
 
-
+def Hierachi_K(faces_id, dist, thr=21.75):
+    res = {}
+    K = HselectK(faces_id, dist)
+    seed_set, seed_dist = HselectSeeds(K, faces_id, dist)
+    seed_list = list(seed_set)
+    local_res = H_k_way(faces_id, seed_list, dist)
+    # val = 0
+    # for i in local_res:
+    #     val += len(local_res[i])
+    # print(val, len(faces_id))
+    if seed_dist < thr:
+        return local_res
+    else:
+        curr_k = 0
+        for i in range(K):
+            k_res = Hierachi_K(local_res[i], dist)
+            for j in k_res:
+                res[curr_k] = k_res[j]
+                curr_k += 1
+        return res
